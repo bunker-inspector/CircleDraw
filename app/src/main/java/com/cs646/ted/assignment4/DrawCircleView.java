@@ -143,7 +143,13 @@ public class DrawCircleView extends View {
                 TimerTask incrementRadiusTask = new TimerTask() {
                     @Override
                     public void run() {
-                        mCurrentCircle.setmRadius(mCurrentCircle.getmRadius() + 0.75f);
+                        if((mCurrentCircle.getmX()
+                                + mCurrentCircle.getmRadius() < getMeasuredWidth()
+                                && mCurrentCircle.getmX() - mCurrentCircle.getmRadius() > 0
+                                && mCurrentCircle.getmY()
+                                + mCurrentCircle.getmRadius() < getMeasuredHeight()
+                                && mCurrentCircle.getmY() - mCurrentCircle.getmRadius() > 0))
+                            mCurrentCircle.setmRadius(mCurrentCircle.getmRadius() + 0.75f);
                         publishProgress();
                     }
                 };
@@ -185,6 +191,14 @@ public class DrawCircleView extends View {
         @Override
         public void run() {
             DisplayMetrics dm = new DisplayMetrics();
+
+            if((mCircle.getmX() + mCircle.getmRadius()) > getMeasuredWidth() ||
+                    (mCircle.getmX() - mCircle.getmRadius()) < 0)
+                mXVelocity = -mXVelocity;
+
+            if((mCircle.getmY() + mCircle.getmRadius()) > getMeasuredHeight() ||
+                    (mCircle.getmY() - mCircle.getmRadius()) < 0)
+                mYVelocity = -mYVelocity;
 
             mCircle.setmX(mCircle.getmX() + mXVelocity);
             mCircle.setmY(mCircle.getmY() + mYVelocity);
