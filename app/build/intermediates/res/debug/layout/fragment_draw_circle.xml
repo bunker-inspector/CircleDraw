@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.cs646.ted.assignment4.DrawCircleView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></com.cs646.ted.assignment4.DrawCircleView>
+
+</LinearLayout><!-- From: file:/home/ted/projects/Android/assignment4/app/src/main/res/layout/fragment_draw_circle.xml -->
