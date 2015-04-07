@@ -8,7 +8,6 @@ import android.graphics.PointF;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -24,7 +23,7 @@ public class DrawCircleView extends View {
     private static final String TAG = "DrawCircleView";
 
     private ArrayList<Circle> mCircles = new ArrayList<>();
-    private ArrayList<SwipeAnimationTimer> mAnimations = new ArrayList<>();
+    private SwipeAnimationTimer mAnimation;
     private Circle mCurrentCircle;
     private Paint mCirclePaint;
     private Paint mBackgroundPaint;
@@ -49,6 +48,9 @@ public class DrawCircleView extends View {
         // paint the background off-white
         mBackgroundPaint = new Paint();
         mBackgroundPaint.setColor(Color.WHITE);
+
+        Timer animationTimer = new Timer();
+        animationTimer.scheduleAtFixedRate(new SwipeAnimationTimer(), 0, 5);
     }
 
     @Override
@@ -73,6 +75,7 @@ public class DrawCircleView extends View {
             case MotionEvent.ACTION_DOWN:
                 // reset our drawing state
                 if ((mRetrievedCircle = getCircleTouched(curr)) != null){
+                    mRetrievedCircle.stopCircle();
                     mTouchedExistingCircle = true;
                     mVelocityTracker = VelocityTracker.obtain();
                     mVelocityTracker.addMovement(event);
@@ -109,14 +112,10 @@ public class DrawCircleView extends View {
             case MotionEvent.ACTION_UP:
                 if(mTouchedExistingCircle) {
                     mVelocityTracker.computeCurrentVelocity(5);
-                    mAnimations.add(new SwipeAnimationTimer(mRetrievedCircle,
-                            mVelocityTracker.getXVelocity(), mVelocityTracker.getYVelocity()));
-                    Timer animationTimer = new Timer();
-                    animationTimer.scheduleAtFixedRate(mAnimations.get(mAnimations.size() -1),
-                            0, 5);
+                    mRetrievedCircle.setmVelocity(mVelocityTracker.getXVelocity(),
+                            mVelocityTracker.getYVelocity());
                     mVelocityTracker.recycle();
                     mVelocityTracker = null;
-                    Log.i(TAG, "HERE!");
                 }
                 downTouchEventInProgress = mTouchedExistingCircle = false;
                 Log.i(TAG, "UP at x=" + curr.x + ", y=" + curr.y);
@@ -125,9 +124,6 @@ public class DrawCircleView extends View {
                 mCurrentCircle = null;
                 break;
             case MotionEvent.ACTION_POINTER_DOWN:
-                for (SwipeAnimationTimer t : mAnimations)
-                    t.cancel();
-                mAnimations.clear();
                 mCircles.clear();
                 invalidate();
                 break;
@@ -171,15 +167,7 @@ public class DrawCircleView extends View {
     }
 
     class SwipeAnimationTimer extends TimerTask{
-        Circle mCircle;
-        float mXVelocity, mYVelocity;
         Handler mHandler = new Handler();
-
-        public SwipeAnimationTimer(Circle circle, float xVelocity, float yVelocity){
-            mCircle = circle;
-            mXVelocity = xVelocity;
-            mYVelocity = yVelocity;
-        }
 
         final Runnable invalidateRunnable = new Runnable() {
             @Override
@@ -190,18 +178,20 @@ public class DrawCircleView extends View {
 
         @Override
         public void run() {
-            DisplayMetrics dm = new DisplayMetrics();
+            for (Circle circle: mCircles) {
+                if ((circle.getmX() + circle.getmRadius()) > getMeasuredWidth() ||
+                        (circle.getmX() - circle.getmRadius()) < 0) {
+                    circle.flipXVelocity();
+                }
 
-            if((mCircle.getmX() + mCircle.getmRadius()) > getMeasuredWidth() ||
-                    (mCircle.getmX() - mCircle.getmRadius()) < 0)
-                mXVelocity = -mXVelocity;
+                if ((circle.getmY() + circle.getmRadius()) > getMeasuredHeight() ||
+                        (circle.getmY() - circle.getmRadius()) < 0) {
+                    circle.flipYVelocity();
+                }
 
-            if((mCircle.getmY() + mCircle.getmRadius()) > getMeasuredHeight() ||
-                    (mCircle.getmY() - mCircle.getmRadius()) < 0)
-                mYVelocity = -mYVelocity;
-
-            mCircle.setmX(mCircle.getmX() + mXVelocity);
-            mCircle.setmY(mCircle.getmY() + mYVelocity);
+                circle.setmX(circle.getmX() + circle.getXVelocity());
+                circle.setmY(circle.getmY() + circle.getYVelocity());
+            }
 
             mHandler.post(invalidateRunnable);
         }
